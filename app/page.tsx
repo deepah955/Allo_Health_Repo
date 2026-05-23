@@ -20,6 +20,11 @@ interface Product {
   stocks: Stock[];
 }
 
+interface Warehouse {
+  id: string;
+  name: string;
+}
+
 interface Toast {
   id: number;
   type: "success" | "error";
@@ -87,9 +92,21 @@ function availabilityColor(available: number): string {
 export default function ProductsPage() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(true);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [reservingFor, setReservingFor] = useState<string | null>(null);
+
+  // New product form state
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [addingProduct, setAddingProduct] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    name: "",
+    description: "",
+    imageUrl: "",
+    initialStock: 0,
+    warehouseId: "",
+  });
 
   // Per-product reservation form state
   const [formState, setFormState] = useState<
@@ -132,6 +149,15 @@ export default function ProductsPage() {
 
   useEffect(() => {
     fetchProducts();
+    fetch("/api/warehouses")
+      .then((res) => res.json())
+      .then((data) => {
+        setWarehouses(data);
+        if (data.length > 0) {
+          setNewProduct((prev) => ({ ...prev, warehouseId: data[0].id }));
+        }
+      })
+      .catch(() => {});
   }, [fetchProducts]);
 
   const handleReserve = async (productId: string) => {
@@ -172,19 +198,98 @@ export default function ProductsPage() {
     }
   };
 
+  const handleAddProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAddingProduct(true);
+    try {
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newProduct),
+      });
+      if (res.ok) {
+        addToast("success", "Product added successfully!");
+        setShowAddProduct(false);
+        setNewProduct({
+          name: "",
+          description: "",
+          imageUrl: "",
+          initialStock: 0,
+          warehouseId: warehouses[0]?.id || "",
+        });
+        await fetchProducts();
+      } else {
+        const body = await res.json().catch(() => null);
+        addToast("error", body?.error || "Failed to add product");
+      }
+    } catch {
+      addToast("error", "Network error. Please try again.");
+    } finally {
+      setAddingProduct(false);
+    }
+  };
+
   return (
     <>
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
       {/* Header */}
-      <div className="mb-10">
-        <h1 className="text-3xl sm:text-4xl font-extrabold gradient-text mb-2">
-          Products
-        </h1>
-        <p className="text-[var(--text-secondary)] text-sm">
-          Browse inventory across all warehouses and reserve stock for fulfillment.
-        </p>
+      <div className="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold gradient-text mb-2">
+            Products
+          </h1>
+          <p className="text-[var(--text-secondary)] text-sm">
+            Browse inventory across all warehouses and reserve stock for fulfillment.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowAddProduct(!showAddProduct)}
+          className="btn-primary text-sm whitespace-nowrap"
+        >
+          {showAddProduct ? "Cancel" : "+ Add Product"}
+        </button>
       </div>
+
+      {/* Add Product Form */}
+      {showAddProduct && (
+        <form onSubmit={handleAddProduct} className="glass-card p-6 mb-10 animate-fade-in-up space-y-4">
+          <h2 className="text-xl font-bold mb-4">Add New Product</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] uppercase tracking-wider block mb-1">Name</label>
+              <input required value={newProduct.name} onChange={(e) => setNewProduct({...newProduct, name: e.target.value})} className="w-full bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:border-[var(--accent)] outline-none" placeholder="Product name" />
+            </div>
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] uppercase tracking-wider block mb-1">Description</label>
+              <input required value={newProduct.description} onChange={(e) => setNewProduct({...newProduct, description: e.target.value})} className="w-full bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:border-[var(--accent)] outline-none" placeholder="Short description" />
+            </div>
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] uppercase tracking-wider block mb-1">Image URL (Optional)</label>
+              <input type="url" value={newProduct.imageUrl} onChange={(e) => setNewProduct({...newProduct, imageUrl: e.target.value})} className="w-full bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:border-[var(--accent)] outline-none" placeholder="https://..." />
+            </div>
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="text-xs text-[var(--text-secondary)] uppercase tracking-wider block mb-1">Initial Stock</label>
+                <input type="number" required min="0" value={newProduct.initialStock} onChange={(e) => setNewProduct({...newProduct, initialStock: parseInt(e.target.value) || 0})} className="w-full bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:border-[var(--accent)] outline-none" />
+              </div>
+              <div className="flex-1">
+                <label className="text-xs text-[var(--text-secondary)] uppercase tracking-wider block mb-1">Warehouse</label>
+                <select required value={newProduct.warehouseId} onChange={(e) => setNewProduct({...newProduct, warehouseId: e.target.value})} className="w-full bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:border-[var(--accent)] outline-none">
+                  {warehouses.map((w) => (
+                    <option key={w.id} value={w.id}>{w.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end pt-2">
+            <button type="submit" disabled={addingProduct} className="btn-success text-sm px-6">
+              {addingProduct ? "Adding..." : "Save Product"}
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* Grid */}
       {loading ? (

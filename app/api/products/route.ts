@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { releaseExpiredReservations } from "@/lib/cleanup";
+import { z } from "zod";
 
 export async function GET() {
   await releaseExpiredReservations();
@@ -28,4 +29,66 @@ export async function GET() {
   }));
 
   return NextResponse.json(result);
+}
+
+const productSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().min(1),
+  imageUrl: z.string().url().optional().or(z.literal("")),
+  initialStock: z.number().int().min(0),
+  warehouseId: z.string().min(1),
+});
+
+export async function POST(req: NextRequest) {
+  const body = await req.json();
+  const parsed = productSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid data", details: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const { name, description, imageUrl, initialStock, warehouseId } = parsed.data;
+
+  // Verify warehouse exists
+  const warehouse = await prisma.warehouse.findUnique({ where: { id: warehouseId } });
+  if (!warehouse) {
+    return NextResponse.json({ error: "Warehouse not found" }, { status: 404 });
+  }
+
+  const product = await prisma.product.create({
+    data: {
+      name,
+      description,
+      imageUrl: imageUrl || null,
+      stocks: {
+        create: {
+          warehouseId,
+          total: initialStock,
+          reserved: 0,
+        },
+      },
+    },
+    include: {
+      stocks: {
+        include: { warehouse: true },
+      },
+    },
+  });
+
+  // Map to match the GET structure
+  const result = {
+    id: product.id,
+    name: product.name,
+    description: product.description,
+    imageUrl: product.imageUrl,
+    stocks: product.stocks.map((s) => ({
+      warehouseId: s.warehouseId,
+      warehouseName: s.warehouse.name,
+      total: s.total,
+      reserved: s.reserved,
+      available: s.total - s.reserved,
+    })),
+  };
+
+  return NextResponse.json(result, { status: 201 });
 }
