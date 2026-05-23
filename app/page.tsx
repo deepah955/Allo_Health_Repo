@@ -129,7 +129,7 @@ export default function ProductsPage() {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const res = await fetch("/api/products");
+      const res = await fetch("/api/products", { cache: "no-store" });
       if (!res.ok) throw new Error("Failed to fetch products");
       const data = await res.json();
       setProducts(data);
@@ -153,7 +153,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     fetchProducts();
-    fetch("/api/warehouses")
+    fetch("/api/warehouses", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         setWarehouses(data);

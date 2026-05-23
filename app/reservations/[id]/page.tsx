@@ -177,7 +177,7 @@ export default function ReservationDetailPage() {
   
   const fetchReservation = useCallback(async () => {
     try {
-      const res = await fetch("/api/reservations");
+      const res = await fetch("/api/reservations", { cache: "no-store" });
       if (!res.ok) throw new Error("Failed to fetch");
       const data: Reservation[] = await res.json();
       const found = data.find((r) => r.id === id);
