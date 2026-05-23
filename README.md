@@ -1,189 +1,84 @@
-# Allo Inventory — Warehouse Reservation System
+Allo Inventory Warehouse Reservation System
 
-A full-stack Next.js application that solves the inventory race condition at checkout: reserving stock atomically so two customers can never buy the same physical unit.
 
----
+A full application that solves the problem of two people trying to buy the exact same item at the same time. It locks the item in the database so only one person can successfully buy it.
 
-## Live Demo
 
-> Deploy to Vercel (see instructions below) and paste your URL here.
 
----
+1. Live Demo
 
-## Local Setup
+You can deploy this project to Vercel and check your live website link there.
 
-### Prerequisites
-- Node.js 18+
-- A hosted PostgreSQL instance (Supabase, Neon, or Railway)
 
-### 1. Clone & Install
 
-```bash
-git clone <your-repo-url>
-cd allo-inventory
-npm install
-```
+2. Local Setup Steps
 
-### 2. Environment Variables
+Here is what you need to run this on your own computer. You need Node installed and a database like Supabase.
 
-Copy the example file and fill in your credentials:
+1. Download the code from your repository.
+2. Open the folder called AlloHealthProject.
+3. Run the install command to get all required packages.
+4. Copy the environment example file and create your own environment file.
+5. Put your database connection link inside the new environment file.
+6. Push the database structure by running the database push command.
+7. Fill the database with sample items by running the database seed command.
+8. Start the server by running the development command.
+9. Open your browser and go to localhost port 3000.
 
-```bash
-cp .env.example .env
-```
 
-Edit `.env`:
 
-```env
-# Supabase pooled connection (session mode for schema migrations):
-DATABASE_URL="postgresql://postgres.[project-ref]:[password]@aws-X-[region].pooler.supabase.com:5432/postgres?sslmode=no-verify"
-```
+3. How the Reservation System Works
 
-> **Note on port:** Use port `5432` (session mode) for local development and migrations. Use port `6543` (transaction mode) for production serverless deployments on Vercel.
+When someone tries to buy an item, taking their payment can take a few minutes. If we remove the item from stock too early, people who leave without paying will make items look sold out. If we remove the item too late, two people might pay for the exact same physical item.
 
-### 3. Push Schema & Seed
+Our solution is to lock the stock in the database the moment someone clicks reserve. The database processes these requests one by one. If ten people click reserve at the exact same time for the very last item, the database will give it to the first person and tell the other nine people that the item is sold out.
 
-```bash
-# Push Prisma schema to your database
-npm run db:push
 
-# Seed with sample warehouses, products and stock
-npm run db:seed
-```
 
-### 4. Run Locally
+4. Expiry Mechanism
 
-```bash
-npm run dev
-```
+Reservations only last for a limited time so items are not locked forever.
 
-Open [http://localhost:3000](http://localhost:3000).
+1. A background task runs every 5 minutes to find expired reservations and put the items back in stock.
+2. Whenever anyone views the products page, the system also checks for expired reservations and cleans them up.
+3. When someone tries to finalize their purchase, the system checks the time one last time to make sure their reservation has not expired.
 
----
 
-## How the Reservation System Works
 
-### The Race Condition Problem
+5. Safety Features
 
-When a customer proceeds to checkout, payment can take several minutes (3DS flows, UPI, wallet redirects). During this window, thousands of shoppers may view the same product. Two naive approaches fail:
+If a payment fails and the system tries to confirm the purchase a second time, we use a unique key to remember that we already handled this request. This prevents the system from accidentally removing the stock twice.
 
-- **Decrement at payment** → Two customers can pay for the same unit
-- **Decrement at add-to-cart** → 80% of abandoned carts cause false stock depletion
 
-### Our Solution: Atomic Reservation
 
-When a customer hits **Reserve**, we run a single atomic SQL `UPDATE` on the `Stock` row:
+6. Application Programming Interface Reference
 
-```sql
-UPDATE "Stock"
-SET    "reserved" = "reserved" + $quantity
-WHERE  "productId"   = $productId
-  AND  "warehouseId" = $warehouseId
-  AND  ("total" - "reserved") >= $quantity
-```
+Here are the available commands you can send to the server.
 
-PostgreSQL serializes writes to the same row, so if 10 requests arrive simultaneously for the last unit:
-- Exactly **1** will satisfy the `WHERE` condition and update the row (affected rows = 1 → `201 Created`)
-- The other **9** will find `(total - reserved) < quantity` and update nothing (affected rows = 0 → `409 Conflict`)
+1. Get products to list products with available stock.
+2. Get warehouses to list all warehouses.
+3. Post reservations to lock an item.
+4. Post reservations confirm to finalize the purchase.
+5. Post reservations release to cancel the purchase early.
+6. Get cron cleanup to remove all expired items.
 
-This is verified by the automated concurrency test in `scripts/test-concurrency.ts`.
 
----
 
-## Expiry Mechanism
+7. Concurrency Test
 
-### In Production (Vercel Cron)
+You can test how the system handles many requests at once. While the server is running, you can run the test concurrency script. It will send ten requests at the exact same time for the last available item. It will verify that exactly one request succeeds and nine requests fail.
 
-`vercel.json` defines a cron job that runs every 5 minutes:
 
-```json
-{
-  "crons": [{ "path": "/api/cron/cleanup", "schedule": "*/5 * * * *" }]
-}
-```
 
-The `/api/cron/cleanup` endpoint calls `releaseExpiredReservations()` which:
-1. Finds all `PENDING` reservations where `expiresAt < NOW()`
-2. Decrements `Stock.reserved` for each atomically
-3. Sets their status to `RELEASED`
+8. Deploying to Vercel
 
-### Lazy Cleanup on Read
+1. Push your code to GitHub.
+2. Import the code in Vercel.
+3. Set your database connection link in the environment variables.
+4. Deploy the project.
 
-Every `GET /api/products` and `POST /api/reservations` call first runs `releaseExpiredReservations()` before returning data. This ensures stock counts are always accurate even between cron ticks.
 
-### Confirm endpoint safety net
 
-Even if neither cleanup mechanism has fired, the `POST /api/reservations/:id/confirm` endpoint always checks `expiresAt < NOW()` and returns `410 Gone` if the reservation is expired — the stock is never permanently decremented for an expired hold.
+9. Future Improvements
 
----
-
-## Idempotency (Bonus)
-
-POST endpoints (`/api/reservations` and `/api/reservations/:id/confirm`) support idempotency via the `Idempotency-Key` request header.
-
-**How it works:**
-1. Client sends `Idempotency-Key: <unique-uuid>` with the request
-2. The `withIdempotency()` wrapper checks the `IdempotencyRequest` table in Postgres
-3. If the key exists → returns the cached `statusCode` and `body` immediately (no side effects)
-4. If not → runs the handler, stores `{ key, statusCode, body }`, returns the response
-
-This means retrying a failed payment confirmation is safe — the stock won't be double-decremented.
-
----
-
-## API Reference
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/products` | List products with available stock per warehouse |
-| GET | `/api/warehouses` | List all warehouses |
-| POST | `/api/reservations` | Reserve units — returns `409` if insufficient stock |
-| POST | `/api/reservations/:id/confirm` | Confirm reservation — returns `410` if expired |
-| POST | `/api/reservations/:id/release` | Release reservation early |
-| GET | `/api/cron/cleanup` | Release all expired reservations (used by Vercel Cron) |
-
----
-
-## Concurrency Test
-
-With the server running (`npm run dev` or `npm run start`):
-
-```bash
-npx tsx scripts/test-concurrency.ts
-```
-
-This fires 10 simultaneous requests for the last unit of a test SKU and asserts:
-- Exactly `1` response with `201 Created`
-- Exactly `9` responses with `409 Conflict`
-
----
-
-## Deploying to Vercel
-
-1. Push your code to GitHub
-2. Import the repo in [vercel.com](https://vercel.com)
-3. Set environment variable `DATABASE_URL` to your **transaction mode pooler URL** (port `6543`)
-4. Deploy — Vercel Cron picks up `vercel.json` automatically
-
----
-
-## Trade-offs & What I'd Do Differently
-
-### What works well
-- **Atomic SQL reservation** — fully race-condition-free without Redis or distributed locks
-- **Lazy cleanup** — always-accurate stock counts on reads without dedicated infra
-- **Idempotency in Postgres** — bonus feature implemented without Redis
-
-### Trade-offs made
-- **No Redis** — idempotency and concurrency are handled entirely in Postgres. Redis would give faster idempotency lookups but adds infra complexity
-- **Pooler limitations** — Supabase's transaction-mode pooler (port 6543) doesn't support DDL, so migrations must use session mode (port 5432). In production, the `DATABASE_URL` should use port 6543
-- **No authentication** — reservations aren't tied to user accounts in this demo. A real system would associate reservations with customer sessions/JWTs
-- **No pricing** — the checkout page doesn't show prices; a real system would lock the price at reservation time
-- **Cron granularity** — the free Vercel plan supports crons no more frequent than once per minute. For tighter expiry windows, a background worker (BullMQ, Inngest) would be better
-
-### With more time
-- Add user authentication (NextAuth.js) and tie reservations to user accounts
-- Replace lazy cleanup with a proper job queue (Inngest or BullMQ) for instant expiry
-- Add price locking at reservation creation time
-- Write more comprehensive integration tests per endpoint
-- Add admin dashboard for warehouse stock management
+What works well is that the database safely handles multiple requests at once without extra tools. In the future we could add user accounts to track who is reserving items. We could also add exact prices at the time of reservation and a dashboard to manage all warehouse stock.
