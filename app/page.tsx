@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
-
 interface Stock {
   warehouseId: string;
   warehouseName: string;
@@ -31,7 +30,6 @@ interface Toast {
   message: string;
 }
 
-
 function SkeletonCard() {
   return (
     <div className="glass-card p-6 space-y-4">
@@ -51,7 +49,6 @@ function SkeletonCard() {
     </div>
   );
 }
-
 
 function ToastContainer({
   toasts,
@@ -81,13 +78,11 @@ function ToastContainer({
   );
 }
 
-
 function availabilityColor(available: number): string {
   if (available <= 0) return "text-red-400";
   if (available <= 5) return "text-yellow-400";
   return "text-green-400";
 }
-
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -129,7 +124,7 @@ export default function ProductsPage() {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const res = await fetch("/api/products", { cache: "no-store" });
+      const res = await fetch("/api/products");
       if (!res.ok) throw new Error("Failed to fetch products");
       const data = await res.json();
       setProducts(data);
@@ -153,7 +148,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     fetchProducts();
-    fetch("/api/warehouses", { cache: "no-store" })
+    fetch("/api/warehouses")
       .then((res) => res.json())
       .then((data) => {
         setWarehouses(data);
@@ -169,6 +164,20 @@ export default function ProductsPage() {
         }
       })
       .catch(() => {});
+  }, [fetchProducts]);
+
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchProducts();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", () => fetchProducts());
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", () => fetchProducts());
+    };
   }, [fetchProducts]);
 
   const handleReserve = async (productId: string) => {
@@ -190,6 +199,7 @@ export default function ProductsPage() {
       if (res.status === 201) {
         const reservation = await res.json();
         addToast("success", "Reservation created successfully!");
+        await fetchProducts();
         router.push(`/reservations/${reservation.id}`);
         return;
       }
@@ -257,7 +267,6 @@ export default function ProductsPage() {
     <>
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
-      {}
       <div className="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl sm:text-4xl font-extrabold gradient-text mb-2">
@@ -275,7 +284,6 @@ export default function ProductsPage() {
         </button>
       </div>
 
-      {}
       {showAddProduct && (
         <form onSubmit={handleAddProduct} className="glass-card p-6 mb-10 animate-fade-in-up space-y-4">
           <h2 className="text-xl font-bold mb-4">Add New Product</h2>
@@ -335,7 +343,6 @@ export default function ProductsPage() {
         </form>
       )}
 
-      {}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -364,7 +371,6 @@ export default function ProductsPage() {
                 className="glass-card p-6 hover:bg-[var(--bg-card-hover)] transition-all duration-300 hover:border-[var(--accent)]/30 animate-fade-in-up group"
                 style={{ animationDelay: `${idx * 80}ms` }}
               >
-                {}
                 <h2 className="text-lg font-bold mb-1 group-hover:text-[var(--accent-hover)] transition-colors">
                   {product.name}
                 </h2>
@@ -379,7 +385,6 @@ export default function ProductsPage() {
                   </p>
                 )}
 
-                {}
                 <div className="overflow-x-auto mb-5">
                   <table className="w-full text-xs">
                     <thead>
@@ -422,10 +427,8 @@ export default function ProductsPage() {
                   </table>
                 </div>
 
-                {}
                 {product.stocks.length > 0 && (
                   <div className="flex flex-wrap gap-2 items-end">
-                    {}
                     <div className="flex-1 min-w-[120px]">
                       <label className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider block mb-1">
                         Warehouse
@@ -451,7 +454,6 @@ export default function ProductsPage() {
                       </select>
                     </div>
 
-                    {}
                     <div className="w-20">
                       <label className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider block mb-1">
                         Qty
@@ -479,7 +481,6 @@ export default function ProductsPage() {
                       </select>
                     </div>
 
-                    {}
                     <button
                       onClick={() => handleReserve(product.id)}
                       disabled={reservingFor === product.id}

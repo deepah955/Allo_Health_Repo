@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 
 type HandlerFn = (req: NextRequest, ...args: unknown[]) => Promise<NextResponse>;
 
-
 export function withIdempotency(handler: HandlerFn): HandlerFn {
   return async (req: NextRequest, ...args: unknown[]) => {
     const key = req.headers.get("idempotency-key");

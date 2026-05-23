@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
-
 interface Reservation {
   id: string;
   productId: string;
@@ -22,7 +21,6 @@ interface Toast {
   type: "success" | "error";
   message: string;
 }
-
 
 function ToastContainer({
   toasts,
@@ -52,7 +50,6 @@ function ToastContainer({
   );
 }
 
-
 function StatusBadge({ status }: { status: string }) {
   const cls =
     status === "PENDING"
@@ -62,7 +59,6 @@ function StatusBadge({ status }: { status: string }) {
         : "badge-released";
   return <span className={`badge ${cls}`}>{status}</span>;
 }
-
 
 function CountdownRing({
   secondsLeft,
@@ -95,7 +91,6 @@ function CountdownRing({
   return (
     <div className={`relative inline-flex items-center justify-center ${isUrgent ? "pulse-urgent" : ""}`}>
       <svg width="140" height="140" viewBox="0 0 120 120">
-        {}
         <circle
           cx="60"
           cy="60"
@@ -104,7 +99,6 @@ function CountdownRing({
           stroke="var(--border)"
           strokeWidth="6"
         />
-        {}
         <defs>
           <filter id="glow">
             <feGaussianBlur stdDeviation="3" result="coloredBlur" />
@@ -114,7 +108,6 @@ function CountdownRing({
             </feMerge>
           </filter>
         </defs>
-        {}
         <circle
           cx="60"
           cy="60"
@@ -131,7 +124,6 @@ function CountdownRing({
           style={{ filter: `drop-shadow(0 0 8px ${glowColor})` }}
         />
       </svg>
-      {}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span
           className="text-2xl font-bold tabular-nums"
@@ -146,7 +138,6 @@ function CountdownRing({
     </div>
   );
 }
-
 
 export default function ReservationDetailPage() {
   const params = useParams();
@@ -177,7 +168,7 @@ export default function ReservationDetailPage() {
   
   const fetchReservation = useCallback(async () => {
     try {
-      const res = await fetch("/api/reservations", { cache: "no-store" });
+      const res = await fetch("/api/reservations");
       if (!res.ok) throw new Error("Failed to fetch");
       const data: Reservation[] = await res.json();
       const found = data.find((r) => r.id === id);
@@ -327,7 +318,6 @@ export default function ReservationDetailPage() {
     <>
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
-      {}
       <div className="mb-6">
         <Link
           href="/reservations"
@@ -339,7 +329,6 @@ export default function ReservationDetailPage() {
 
       <div className="max-w-2xl mx-auto animate-fade-in-up">
         <div className="glass-card p-8">
-          {}
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold gradient-text mb-1">
@@ -352,7 +341,6 @@ export default function ReservationDetailPage() {
             <StatusBadge status={reservation.status} />
           </div>
 
-          {}
           <div className="grid grid-cols-2 gap-4 mb-8">
             <div className="bg-[var(--bg-secondary)] rounded-xl p-4">
               <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider mb-1">
@@ -391,7 +379,6 @@ export default function ReservationDetailPage() {
             </div>
           </div>
 
-          {}
           {isPending && (
             <div className="text-center mb-8">
               <p className="text-xs text-[var(--text-secondary)] uppercase tracking-widest mb-4">
@@ -409,7 +396,6 @@ export default function ReservationDetailPage() {
             </div>
           )}
 
-          {}
           {isConfirmed && (
             <div className="text-center mb-8 py-8">
               <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-500/10 border-2 border-green-500/30 mb-4">
@@ -436,7 +422,6 @@ export default function ReservationDetailPage() {
             </div>
           )}
 
-          {}
           {isReleased && (
             <div className="text-center mb-8 py-8">
               <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-500/10 border-2 border-red-500/30 mb-4">
@@ -464,7 +449,6 @@ export default function ReservationDetailPage() {
             </div>
           )}
 
-          {}
           {isPending && secondsLeft > 0 && (
             <div className="flex gap-4 justify-center">
               <button
@@ -532,7 +516,6 @@ export default function ReservationDetailPage() {
             </div>
           )}
 
-          {}
           {!isPending && (
             <div className="text-center">
               <button

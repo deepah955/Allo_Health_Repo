@@ -1,6 +1,5 @@
 import { prisma } from "./prisma";
 
-
 export async function releaseExpiredReservations(): Promise<number> {
   const now = new Date();
 
