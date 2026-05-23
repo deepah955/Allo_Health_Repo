@@ -79,9 +79,9 @@ function CountdownRing({
   const mins = Math.max(0, Math.floor(secondsLeft / 60));
   const secs = Math.max(0, Math.floor(secondsLeft % 60));
 
-  // Color transitions: indigo → yellow → red
-  let ringColor = "#6366f1";
-  let glowColor = "rgba(99, 102, 241, 0.3)";
+  // Color transitions: sky blue → yellow → red
+  let ringColor = "#0ea5e9";
+  let glowColor = "rgba(14, 165, 233, 0.3)";
   if (secondsLeft < 60) {
     ringColor = "#ef4444";
     glowColor = "rgba(239, 68, 68, 0.4)";
