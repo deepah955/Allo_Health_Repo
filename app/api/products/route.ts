@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
 
   const { name, description, imageUrl, stocks } = parsed.data;
 
-  // Verify warehouses exist
+  
   const warehouseIds = stocks.map((s) => s.warehouseId);
   const warehouses = await prisma.warehouse.findMany({
     where: { id: { in: warehouseIds } },
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Map to match the GET structure
+  
   const result = {
     id: product.id,
     name: product.name,

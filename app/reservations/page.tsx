@@ -72,7 +72,7 @@ export default function ReservationsPage() {
 
   return (
     <>
-      {/* Header */}
+      {}
       <div className="mb-10">
         <h1 className="text-3xl sm:text-4xl font-extrabold gradient-text mb-2">
           Reservations
@@ -83,7 +83,7 @@ export default function ReservationsPage() {
         </p>
       </div>
 
-      {/* Content */}
+      {}
       {loading ? (
         <div className="space-y-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -113,7 +113,7 @@ export default function ReservationsPage() {
             const isPending = r.status === "PENDING";
             const content = (
               <>
-                {/* Top Row */}
+                {}
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
                     <h3 className="text-base font-bold">
@@ -126,7 +126,7 @@ export default function ReservationsPage() {
                   <StatusBadge status={r.status} />
                 </div>
 
-                {/* Details */}
+                {}
                 <p className="text-sm text-[var(--text-secondary)] mb-3">
                   <span className="font-medium text-[var(--text-primary)]">
                     {r.quantity}×
@@ -137,7 +137,7 @@ export default function ReservationsPage() {
                   </span>
                 </p>
 
-                {/* Timestamps */}
+                {}
                 <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-[var(--text-secondary)]">
                   <span>Created: {formatDate(r.createdAt)}</span>
                   <span>
@@ -146,7 +146,7 @@ export default function ReservationsPage() {
                   </span>
                 </div>
 
-                {/* Pending indicator */}
+                {}
                 {isPending && (
                   <div className="mt-3 flex items-center gap-2 text-xs text-[var(--accent)]">
                     <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

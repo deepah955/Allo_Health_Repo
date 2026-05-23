@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
-/* ───── Types ───── */
+
 interface Stock {
   warehouseId: string;
   warehouseName: string;
@@ -31,7 +31,7 @@ interface Toast {
   message: string;
 }
 
-/* ───── Skeleton Card ───── */
+
 function SkeletonCard() {
   return (
     <div className="glass-card p-6 space-y-4">
@@ -52,7 +52,7 @@ function SkeletonCard() {
   );
 }
 
-/* ───── Toast Container ───── */
+
 function ToastContainer({
   toasts,
   onDismiss,
@@ -81,14 +81,14 @@ function ToastContainer({
   );
 }
 
-/* ───── Availability color helper ───── */
+
 function availabilityColor(available: number): string {
   if (available <= 0) return "text-red-400";
   if (available <= 5) return "text-yellow-400";
   return "text-green-400";
 }
 
-/* ───── Main Page ───── */
+
 export default function ProductsPage() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
@@ -97,7 +97,7 @@ export default function ProductsPage() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [reservingFor, setReservingFor] = useState<string | null>(null);
 
-  // New product form state
+  
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [addingProduct, setAddingProduct] = useState(false);
   const [newProduct, setNewProduct] = useState<{
@@ -112,7 +112,7 @@ export default function ProductsPage() {
     stocks: {},
   });
 
-  // Per-product reservation form state
+  
   const [formState, setFormState] = useState<
     Record<string, { warehouseId: string; quantity: number }>
   >({});
@@ -134,7 +134,7 @@ export default function ProductsPage() {
       const data = await res.json();
       setProducts(data);
 
-      // Initialize form state for new products
+      
       setFormState((prev) => {
         const next = { ...prev };
         for (const p of data) {
@@ -257,7 +257,7 @@ export default function ProductsPage() {
     <>
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
-      {/* Header */}
+      {}
       <div className="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl sm:text-4xl font-extrabold gradient-text mb-2">
@@ -275,7 +275,7 @@ export default function ProductsPage() {
         </button>
       </div>
 
-      {/* Add Product Form */}
+      {}
       {showAddProduct && (
         <form onSubmit={handleAddProduct} className="glass-card p-6 mb-10 animate-fade-in-up space-y-4">
           <h2 className="text-xl font-bold mb-4">Add New Product</h2>
@@ -335,7 +335,7 @@ export default function ProductsPage() {
         </form>
       )}
 
-      {/* Grid */}
+      {}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -364,7 +364,7 @@ export default function ProductsPage() {
                 className="glass-card p-6 hover:bg-[var(--bg-card-hover)] transition-all duration-300 hover:border-[var(--accent)]/30 animate-fade-in-up group"
                 style={{ animationDelay: `${idx * 80}ms` }}
               >
-                {/* Product Info */}
+                {}
                 <h2 className="text-lg font-bold mb-1 group-hover:text-[var(--accent-hover)] transition-colors">
                   {product.name}
                 </h2>
@@ -379,7 +379,7 @@ export default function ProductsPage() {
                   </p>
                 )}
 
-                {/* Stock Table */}
+                {}
                 <div className="overflow-x-auto mb-5">
                   <table className="w-full text-xs">
                     <thead>
@@ -422,10 +422,10 @@ export default function ProductsPage() {
                   </table>
                 </div>
 
-                {/* Reserve Controls */}
+                {}
                 {product.stocks.length > 0 && (
                   <div className="flex flex-wrap gap-2 items-end">
-                    {/* Warehouse Selector */}
+                    {}
                     <div className="flex-1 min-w-[120px]">
                       <label className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider block mb-1">
                         Warehouse
@@ -451,7 +451,7 @@ export default function ProductsPage() {
                       </select>
                     </div>
 
-                    {/* Quantity */}
+                    {}
                     <div className="w-20">
                       <label className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider block mb-1">
                         Qty
@@ -479,7 +479,7 @@ export default function ProductsPage() {
                       </select>
                     </div>
 
-                    {/* Reserve Button */}
+                    {}
                     <button
                       onClick={() => handleReserve(product.id)}
                       disabled={reservingFor === product.id}

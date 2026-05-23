@@ -5,14 +5,14 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Seeding database...");
 
-  // Clean existing data
+  
   await prisma.reservation.deleteMany();
   await prisma.stock.deleteMany();
   await prisma.idempotencyRequest.deleteMany();
   await prisma.product.deleteMany();
   await prisma.warehouse.deleteMany();
 
-  // Create warehouses
+  
   const [wh1, wh2, wh3] = await Promise.all([
     prisma.warehouse.create({
       data: { name: "Mumbai Central", location: "Mumbai, Maharashtra" },
@@ -27,7 +27,7 @@ async function main() {
 
   console.log(`✅ Created ${3} warehouses`);
 
-  // Create products
+  
   const products = await Promise.all([
     prisma.product.create({
       data: {
@@ -75,7 +75,7 @@ async function main() {
 
   console.log(`✅ Created ${products.length} products`);
 
-  // Create stock entries — varying quantities across warehouses
+  
   const stockData = products.flatMap((p, i) => [
     { productId: p.id, warehouseId: wh1.id, total: 10 + i * 3, reserved: 0 },
     { productId: p.id, warehouseId: wh2.id, total: 5 + i * 2, reserved: 0 },

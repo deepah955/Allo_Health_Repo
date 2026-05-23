@@ -23,10 +23,10 @@ async function handleReserve(req: NextRequest): Promise<NextResponse> {
 
   const { productId, warehouseId, quantity } = parsed.data;
 
-  // Lazy cleanup
+  
   await releaseExpiredReservations();
 
-  // Atomic stock reservation — this is the concurrency-safe operation
+  
   const affected = await prisma.$executeRaw`
     UPDATE "Stock"
     SET    "reserved" = "reserved" + ${quantity}
@@ -42,8 +42,8 @@ async function handleReserve(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // Create the reservation record
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+  
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); 
   const reservation = await prisma.reservation.create({
     data: { productId, warehouseId, quantity, expiresAt },
     include: { product: true, warehouse: true },

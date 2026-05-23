@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
-/* ───── Types ───── */
+
 interface Reservation {
   id: string;
   productId: string;
@@ -23,7 +23,7 @@ interface Toast {
   message: string;
 }
 
-/* ───── Toast Container ───── */
+
 function ToastContainer({
   toasts,
   onDismiss,
@@ -52,7 +52,7 @@ function ToastContainer({
   );
 }
 
-/* ───── Status Badge ───── */
+
 function StatusBadge({ status }: { status: string }) {
   const cls =
     status === "PENDING"
@@ -63,7 +63,7 @@ function StatusBadge({ status }: { status: string }) {
   return <span className={`badge ${cls}`}>{status}</span>;
 }
 
-/* ───── Countdown Ring ───── */
+
 function CountdownRing({
   secondsLeft,
   totalSeconds,
@@ -79,7 +79,7 @@ function CountdownRing({
   const mins = Math.max(0, Math.floor(secondsLeft / 60));
   const secs = Math.max(0, Math.floor(secondsLeft % 60));
 
-  // Color transitions: sky blue → yellow → red
+  
   let ringColor = "#0ea5e9";
   let glowColor = "rgba(14, 165, 233, 0.3)";
   if (secondsLeft < 60) {
@@ -95,7 +95,7 @@ function CountdownRing({
   return (
     <div className={`relative inline-flex items-center justify-center ${isUrgent ? "pulse-urgent" : ""}`}>
       <svg width="140" height="140" viewBox="0 0 120 120">
-        {/* Background ring */}
+        {}
         <circle
           cx="60"
           cy="60"
@@ -104,7 +104,7 @@ function CountdownRing({
           stroke="var(--border)"
           strokeWidth="6"
         />
-        {/* Glow filter */}
+        {}
         <defs>
           <filter id="glow">
             <feGaussianBlur stdDeviation="3" result="coloredBlur" />
@@ -114,7 +114,7 @@ function CountdownRing({
             </feMerge>
           </filter>
         </defs>
-        {/* Progress ring */}
+        {}
         <circle
           cx="60"
           cy="60"
@@ -131,7 +131,7 @@ function CountdownRing({
           style={{ filter: `drop-shadow(0 0 8px ${glowColor})` }}
         />
       </svg>
-      {/* Center text */}
+      {}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span
           className="text-2xl font-bold tabular-nums"
@@ -147,7 +147,7 @@ function CountdownRing({
   );
 }
 
-/* ───── Main Page ───── */
+
 export default function ReservationDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -174,7 +174,7 @@ export default function ReservationDetailPage() {
     setToasts((prev) => prev.filter((t) => t.id !== tid));
   }, []);
 
-  /* Fetch reservation */
+  
   const fetchReservation = useCallback(async () => {
     try {
       const res = await fetch("/api/reservations");
@@ -184,7 +184,7 @@ export default function ReservationDetailPage() {
       if (!found) throw new Error("Reservation not found");
       setReservation(found);
 
-      // Calculate countdown
+      
       const expiresAt = new Date(found.expiresAt).getTime();
       const createdAt = new Date(found.createdAt).getTime();
       const now = Date.now();
@@ -204,14 +204,14 @@ export default function ReservationDetailPage() {
     fetchReservation();
   }, [fetchReservation]);
 
-  /* Countdown timer */
+  
   useEffect(() => {
     if (!reservation || reservation.status !== "PENDING") return;
 
     timerRef.current = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
-          // Auto-release on expiry
+          
           clearInterval(timerRef.current!);
           handleRelease(true);
           return 0;
@@ -223,10 +223,10 @@ export default function ReservationDetailPage() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [reservation?.id, reservation?.status]);
 
-  /* Actions */
+  
   const handleConfirm = async () => {
     setActing(true);
     try {
@@ -327,7 +327,7 @@ export default function ReservationDetailPage() {
     <>
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
-      {/* Breadcrumb */}
+      {}
       <div className="mb-6">
         <Link
           href="/reservations"
@@ -339,7 +339,7 @@ export default function ReservationDetailPage() {
 
       <div className="max-w-2xl mx-auto animate-fade-in-up">
         <div className="glass-card p-8">
-          {/* Header */}
+          {}
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold gradient-text mb-1">
@@ -352,7 +352,7 @@ export default function ReservationDetailPage() {
             <StatusBadge status={reservation.status} />
           </div>
 
-          {/* Details Grid */}
+          {}
           <div className="grid grid-cols-2 gap-4 mb-8">
             <div className="bg-[var(--bg-secondary)] rounded-xl p-4">
               <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider mb-1">
@@ -391,7 +391,7 @@ export default function ReservationDetailPage() {
             </div>
           </div>
 
-          {/* Countdown (PENDING only) */}
+          {}
           {isPending && (
             <div className="text-center mb-8">
               <p className="text-xs text-[var(--text-secondary)] uppercase tracking-widest mb-4">
@@ -409,7 +409,7 @@ export default function ReservationDetailPage() {
             </div>
           )}
 
-          {/* Confirmed State */}
+          {}
           {isConfirmed && (
             <div className="text-center mb-8 py-8">
               <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-500/10 border-2 border-green-500/30 mb-4">
@@ -436,7 +436,7 @@ export default function ReservationDetailPage() {
             </div>
           )}
 
-          {/* Released State */}
+          {}
           {isReleased && (
             <div className="text-center mb-8 py-8">
               <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-500/10 border-2 border-red-500/30 mb-4">
@@ -464,7 +464,7 @@ export default function ReservationDetailPage() {
             </div>
           )}
 
-          {/* Action Buttons (PENDING only) */}
+          {}
           {isPending && secondsLeft > 0 && (
             <div className="flex gap-4 justify-center">
               <button
@@ -532,7 +532,7 @@ export default function ReservationDetailPage() {
             </div>
           )}
 
-          {/* Back link for completed states */}
+          {}
           {!isPending && (
             <div className="text-center">
               <button
