@@ -7,7 +7,7 @@ A full application that solves the problem of two people trying to buy the exact
 
 1. Live Demo
 
-You can deploy this project to Vercel and check your live website link there.
+You can deploy this project to Netlify and check your live website link there.
 
 
 
@@ -70,12 +70,13 @@ You can test how the system handles many requests at once. While the server is r
 
 
 
-8. Deploying to Vercel
+8. Deploying to Netlify
 
 1. Push your code to GitHub.
-2. Import the code in Vercel.
+2. Import the code in Netlify.
 3. Set your database connection link in the environment variables.
 4. Deploy the project.
+5. In your GitHub repository settings add a secret called PRODUCTION_URL with your live Netlify link to run the cleanup task every 5 minutes.
 
 
 
