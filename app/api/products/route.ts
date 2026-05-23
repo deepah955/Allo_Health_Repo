@@ -35,8 +35,10 @@ const productSchema = z.object({
   name: z.string().min(1),
   description: z.string().min(1),
   imageUrl: z.string().url().optional().or(z.literal("")),
-  initialStock: z.number().int().min(0),
-  warehouseId: z.string().min(1),
+  stocks: z.array(z.object({
+    warehouseId: z.string().min(1),
+    initialStock: z.number().int().min(0),
+  })),
 });
 
 export async function POST(req: NextRequest) {
@@ -47,12 +49,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid data", details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { name, description, imageUrl, initialStock, warehouseId } = parsed.data;
+  const { name, description, imageUrl, stocks } = parsed.data;
 
-  // Verify warehouse exists
-  const warehouse = await prisma.warehouse.findUnique({ where: { id: warehouseId } });
-  if (!warehouse) {
-    return NextResponse.json({ error: "Warehouse not found" }, { status: 404 });
+  // Verify warehouses exist
+  const warehouseIds = stocks.map((s) => s.warehouseId);
+  const warehouses = await prisma.warehouse.findMany({
+    where: { id: { in: warehouseIds } },
+  });
+
+  if (warehouses.length !== warehouseIds.length) {
+    return NextResponse.json({ error: "One or more warehouses not found" }, { status: 404 });
   }
 
   const product = await prisma.product.create({
@@ -61,11 +67,11 @@ export async function POST(req: NextRequest) {
       description,
       imageUrl: imageUrl || null,
       stocks: {
-        create: {
-          warehouseId,
-          total: initialStock,
+        create: stocks.map((s) => ({
+          warehouseId: s.warehouseId,
+          total: s.initialStock,
           reserved: 0,
-        },
+        })),
       },
     },
     include: {

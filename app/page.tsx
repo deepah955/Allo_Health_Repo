@@ -100,12 +100,16 @@ export default function ProductsPage() {
   // New product form state
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [addingProduct, setAddingProduct] = useState(false);
-  const [newProduct, setNewProduct] = useState({
+  const [newProduct, setNewProduct] = useState<{
+    name: string;
+    description: string;
+    imageUrl: string;
+    stocks: Record<string, number>;
+  }>({
     name: "",
     description: "",
     imageUrl: "",
-    initialStock: 0,
-    warehouseId: "",
+    stocks: {},
   });
 
   // Per-product reservation form state
@@ -154,7 +158,14 @@ export default function ProductsPage() {
       .then((data) => {
         setWarehouses(data);
         if (data.length > 0) {
-          setNewProduct((prev) => ({ ...prev, warehouseId: data[0].id }));
+          const initialStocks: Record<string, number> = {};
+          data.forEach((w: Warehouse) => {
+            initialStocks[w.id] = 0;
+          });
+          setNewProduct((prev) => ({
+            ...prev,
+            stocks: initialStocks,
+          }));
         }
       })
       .catch(() => {});
@@ -202,20 +213,33 @@ export default function ProductsPage() {
     e.preventDefault();
     setAddingProduct(true);
     try {
+      const stocksArray = Object.entries(newProduct.stocks).map(([warehouseId, initialStock]) => ({
+        warehouseId,
+        initialStock,
+      }));
+
       const res = await fetch("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newProduct),
+        body: JSON.stringify({
+          name: newProduct.name,
+          description: newProduct.description,
+          imageUrl: newProduct.imageUrl,
+          stocks: stocksArray,
+        }),
       });
       if (res.ok) {
         addToast("success", "Product added successfully!");
         setShowAddProduct(false);
+        const resetStocks: Record<string, number> = {};
+        warehouses.forEach((w) => {
+          resetStocks[w.id] = 0;
+        });
         setNewProduct({
           name: "",
           description: "",
           imageUrl: "",
-          initialStock: 0,
-          warehouseId: warehouses[0]?.id || "",
+          stocks: resetStocks,
         });
         await fetchProducts();
       } else {
@@ -264,22 +288,42 @@ export default function ProductsPage() {
               <label className="text-xs text-[var(--text-secondary)] uppercase tracking-wider block mb-1">Description</label>
               <input required value={newProduct.description} onChange={(e) => setNewProduct({...newProduct, description: e.target.value})} className="w-full bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:border-[var(--accent)] outline-none" placeholder="Short description" />
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <label className="text-xs text-[var(--text-secondary)] uppercase tracking-wider block mb-1">Image URL (Optional)</label>
               <input type="url" value={newProduct.imageUrl} onChange={(e) => setNewProduct({...newProduct, imageUrl: e.target.value})} className="w-full bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:border-[var(--accent)] outline-none" placeholder="https://..." />
             </div>
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="text-xs text-[var(--text-secondary)] uppercase tracking-wider block mb-1">Initial Stock</label>
-                <input type="number" required min="0" value={newProduct.initialStock} onChange={(e) => setNewProduct({...newProduct, initialStock: parseInt(e.target.value) || 0})} className="w-full bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:border-[var(--accent)] outline-none" />
-              </div>
-              <div className="flex-1">
-                <label className="text-xs text-[var(--text-secondary)] uppercase tracking-wider block mb-1">Warehouse</label>
-                <select required value={newProduct.warehouseId} onChange={(e) => setNewProduct({...newProduct, warehouseId: e.target.value})} className="w-full bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:border-[var(--accent)] outline-none">
-                  {warehouses.map((w) => (
-                    <option key={w.id} value={w.id}>{w.name}</option>
-                  ))}
-                </select>
+            <div className="sm:col-span-2 border-t border-[var(--border)] pt-4 mt-2">
+              <h3 className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider block mb-3">
+                Warehouse Stock Configuration (Specify initial stock per region)
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {warehouses.map((w) => (
+                  <div key={w.id} className="flex items-center gap-3 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate">{w.name}</p>
+                      <p className="text-[10px] text-[var(--text-secondary)]">Region/Location</p>
+                    </div>
+                    <div className="w-24">
+                      <label className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider block mb-1">Stock</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={newProduct.stocks[w.id] ?? 0}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value) || 0;
+                          setNewProduct((prev) => ({
+                            ...prev,
+                            stocks: {
+                              ...prev.stocks,
+                              [w.id]: val,
+                            },
+                          }));
+                        }}
+                        className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-right focus:border-[var(--accent)] outline-none"
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
